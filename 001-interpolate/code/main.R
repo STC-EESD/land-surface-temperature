@@ -55,7 +55,8 @@ DF.LST <- getData.LST(
     );
 
 visualize.LST(
-    DF.input = DF.LST
+    DF.input   = DF.LST,
+    loess.span = 0.1
     );
 
 ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###

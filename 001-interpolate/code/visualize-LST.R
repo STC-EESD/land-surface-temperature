@@ -1,6 +1,7 @@
 
 visualize.LST <- function(
     DF.input      = NULL,
+    loess.span    = 0.1,
     dots.per.inch = 300
     ) {
 
@@ -19,7 +20,7 @@ visualize.LST <- function(
     trained.loess <- stats::loess(
         formula = LST.night ~ date.index,
         data    = DF.loess[!is.na(DF.loess[,'LST.night']),c('date.index','LST.night')],
-        span    = 0.5
+        span    = loess.span
         );
 
     cat("\nstr(trained.loess)\n");
@@ -43,6 +44,7 @@ visualize.LST <- function(
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     visualize.LST_time.plot(
         DF.input      = DF.loess,
+        loess.span    = loess.span,
         dots.per.inch = dots.per.inch
         );
 
@@ -56,12 +58,16 @@ visualize.LST <- function(
 ##################################################
 visualize.LST_time.plot <- function(
     DF.input      = NULL,
+    loess.span    = 0.1,
     dots.per.inch = 300,
     PNG.output    = paste0("plot-LST-time-plot.png")
     ) {
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-    my.ggplot <- initializePlot();
+    temp.subtitle <- paste0("loess span = ", loess.span);
+
+    ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+    my.ggplot <- initializePlot(subtitle = temp.subtitle);
     my.ggplot <- my.ggplot + ggplot2::theme(
         title         = ggplot2::element_text(size = 20, face = "bold"),
         plot.subtitle = ggplot2::element_text(size = 15, face = "bold")
@@ -76,6 +82,13 @@ visualize.LST_time.plot <- function(
         data    = DF.input,
         mapping = ggplot2::aes(x = date, y = fit.loess),
         color   = 'red'
+        );
+
+    my.ggplot <- my.ggplot + ggplot2::geom_ribbon(
+        data    = DF.input,
+        mapping = ggplot2::aes(x = date, ymin = fit.loess - 2 * se.loess, ymax = fit.loess + 2 * se.loess),
+        fill    = 'red',
+        alpha   = 0.2
         );
 
     my.ggplot <- my.ggplot + ggplot2::theme(

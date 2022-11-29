@@ -10,8 +10,39 @@ visualize.LST <- function(
     cat(paste0("\n# ",thisFunctionName,"() starts.\n"));
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+    DF.loess <- DF.input;
+    DF.loess[,'date.index'] <- as.integer(DF.loess[,'date']);
+
+    cat("\nstr(DF.loess)\n");
+    print( str(DF.loess)   );
+
+    trained.loess <- stats::loess(
+        formula = LST.night ~ date.index,
+        data    = DF.loess[!is.na(DF.loess[,'LST.night']),c('date.index','LST.night')],
+        span    = 0.5
+        );
+
+    cat("\nstr(trained.loess)\n");
+    print( str(trained.loess)   );
+
+    predictions.loess <- predict(
+        object  = trained.loess,
+        newdata = DF.loess,
+        se      = TRUE,
+        );
+
+    cat("\nstr(predictions.loess)\n");
+    print( str(predictions.loess)   );
+
+    DF.loess[,'fit.loess'] <- predictions.loess[[   'fit']];
+    DF.loess[, 'se.loess'] <- predictions.loess[['se.fit']];
+
+    cat("\nstr(DF.loess)\n");
+    print( str(DF.loess)   );
+
+    ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     visualize.LST_time.plot(
-        DF.input      = DF.input,
+        DF.input      = DF.loess,
         dots.per.inch = dots.per.inch
         );
 
@@ -29,6 +60,7 @@ visualize.LST_time.plot <- function(
     PNG.output    = paste0("plot-LST-time-plot.png")
     ) {
 
+    ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     my.ggplot <- initializePlot();
     my.ggplot <- my.ggplot + ggplot2::theme(
         title         = ggplot2::element_text(size = 20, face = "bold"),
@@ -38,6 +70,12 @@ visualize.LST_time.plot <- function(
     my.ggplot <- my.ggplot + ggplot2::geom_line(
         data    = DF.input,
         mapping = ggplot2::aes(x = date, y = LST.night)
+        );
+
+    my.ggplot <- my.ggplot + ggplot2::geom_line(
+        data    = DF.input,
+        mapping = ggplot2::aes(x = date, y = fit.loess),
+        color   = 'red'
         );
 
     my.ggplot <- my.ggplot + ggplot2::theme(
@@ -127,6 +165,7 @@ visualize.LST_time.plot <- function(
         dpi      = dots.per.inch
         );
 
+    ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     return( NULL );
 
     }

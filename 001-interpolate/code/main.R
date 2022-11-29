@@ -24,14 +24,6 @@ code.files <- c(
     "getData-LST.R",
     "initializePlot.R",
     "visualize-LST.R"
-    # "attach-Sens-slopes.R",
-    # "collateData.R",
-    # "getData-greenness-ndvi.R",
-    # "permutation-test-Sens-slope.R",
-    # "single-time-series-analysis.R",
-    # "visualize-Sens-slopes.R"
-    # "attach-sampling.R",
-    # "get-pcpuids-to-plot.R",
     );
 
 for ( code.file in code.files ) {

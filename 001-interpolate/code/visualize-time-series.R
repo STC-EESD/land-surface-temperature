@@ -1,6 +1,10 @@
 
-visualize.LST <- function(
+visualize.time.series <- function(
+    PNG.output    = NULL,
     DF.input      = NULL,
+    variable      = NULL,
+    loess.fit     = NULL,
+    loess.se      = NULL,
     loess.span    = 0.1,
     dots.per.inch = 300
     ) {
@@ -11,39 +15,30 @@ visualize.LST <- function(
     cat(paste0("\n# ",thisFunctionName,"() starts.\n"));
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-    DF.loess <- DF.input;
-    DF.loess[,'date.index'] <- as.integer(DF.loess[,'date']);
+    DF.temp <- DF.input;
 
-    cat("\nstr(DF.loess)\n");
-    print( str(DF.loess)   );
-
-    trained.loess <- stats::loess(
-        formula = LST.night ~ date.index,
-        data    = DF.loess[!is.na(DF.loess[,'LST.night']),c('date.index','LST.night')],
-        span    = loess.span
+    colnames(DF.temp) <- gsub(
+        x           = colnames(DF.temp),
+        pattern     = paste0('^',variable,'$'),
+        replacement = "variable"
         );
 
-    cat("\nstr(trained.loess)\n");
-    print( str(trained.loess)   );
-
-    predictions.loess <- predict(
-        object  = trained.loess,
-        newdata = DF.loess,
-        se      = TRUE,
+    colnames(DF.temp) <- gsub(
+        x           = colnames(DF.temp),
+        pattern     = paste0('^',loess.fit,'$'),
+        replacement = "loess.fit"
         );
 
-    cat("\nstr(predictions.loess)\n");
-    print( str(predictions.loess)   );
-
-    DF.loess[,'fit.loess'] <- predictions.loess[[   'fit']];
-    DF.loess[, 'se.loess'] <- predictions.loess[['se.fit']];
-
-    cat("\nstr(DF.loess)\n");
-    print( str(DF.loess)   );
+    colnames(DF.temp) <- gsub(
+        x           = colnames(DF.temp),
+        pattern     = paste0('^',loess.se,'$'),
+        replacement = "loess.se"
+        );
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     visualize.LST_time.plot(
-        DF.input      = DF.loess,
+        PNG.output    = PNG.output,
+        DF.input      = DF.temp,
         loess.span    = loess.span,
         dots.per.inch = dots.per.inch
         );
@@ -57,14 +52,20 @@ visualize.LST <- function(
 
 ##################################################
 visualize.LST_time.plot <- function(
+    PNG.output    = paste0("plot-LST-time-plot.png"),
     DF.input      = NULL,
     loess.span    = 0.1,
-    dots.per.inch = 300,
-    PNG.output    = paste0("plot-LST-time-plot.png")
+    dots.per.inch = 300
     ) {
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+    cat("\nstr(DF.input) -- visualize.LST_time.plot(.)\n");
+    print( str(DF.input) );
+
+    ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     temp.subtitle <- paste0("loess span = ", loess.span);
+
+    print("A-1");
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     my.ggplot <- initializePlot(subtitle = temp.subtitle);
@@ -73,23 +74,31 @@ visualize.LST_time.plot <- function(
         plot.subtitle = ggplot2::element_text(size = 15, face = "bold")
         );
 
-    my.ggplot <- my.ggplot + ggplot2::geom_line(
-        data    = DF.input,
-        mapping = ggplot2::aes(x = date, y = LST.night)
-        );
+    print("A-2");
 
     my.ggplot <- my.ggplot + ggplot2::geom_line(
         data    = DF.input,
-        mapping = ggplot2::aes(x = date, y = fit.loess),
+        mapping = ggplot2::aes(x = date, y = variable)
+        );
+
+    print("A-3");
+
+    my.ggplot <- my.ggplot + ggplot2::geom_line(
+        data    = DF.input,
+        mapping = ggplot2::aes(x = date, y = loess.fit),
         color   = 'red'
         );
 
+    print("A-4");
+
     my.ggplot <- my.ggplot + ggplot2::geom_ribbon(
         data    = DF.input,
-        mapping = ggplot2::aes(x = date, ymin = fit.loess - 2 * se.loess, ymax = fit.loess + 2 * se.loess),
+        mapping = ggplot2::aes(x = date, ymin = loess.fit - 2 * loess.se, ymax = loess.fit + 2 * loess.se),
         fill    = 'red',
         alpha   = 0.2
         );
+
+    print("A-5");
 
     my.ggplot <- my.ggplot + ggplot2::theme(
         legend.position = "none",
@@ -98,10 +107,14 @@ visualize.LST_time.plot <- function(
         axis.text.x     = ggplot2::element_text(size = 15, face = "bold", angle = 90, vjust = 0.5)
         );
 
+    print("A-6");
+
     my.ggplot <- my.ggplot + ggplot2::scale_x_date(
         limits      = base::range(DF.input[,'date']),
         date_breaks = "2 months"
         );
+
+    print("A-7");
 
     # my.ggplot <- my.ggplot + ggplot2::geom_point(
     #     data    = DF.temp,
@@ -177,6 +190,8 @@ visualize.LST_time.plot <- function(
         units    = "in",
         dpi      = dots.per.inch
         );
+
+    print("A-8");
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     return( NULL );

@@ -1,9 +1,9 @@
 
-getData.LST <- function(
+getData <- function(
     CSV.LST = NULL
     ) {
 
-    thisFunctionName <- "getData.LST";
+    thisFunctionName <- "getData";
 
     cat("\n### ~~~~~~~~~~~~~~~~~~~~ ###");
     cat(paste0("\n# ",thisFunctionName,"() starts.\n"));

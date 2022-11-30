@@ -21,9 +21,10 @@ require(tidyr);
 
 # source supporting R code
 code.files <- c(
-    "getData-LST.R",
+    "attach-loess.R",
+    "getData.R",
     "initializePlot.R",
-    "visualize-LST.R"
+    "visualize-time-series.R"
     );
 
 for ( code.file in code.files ) {
@@ -42,12 +43,49 @@ cat(paste0("\n# n.cores = ",n.cores,"\n"));
 ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
 data.snapshot <- "2022-11-28.01";
 
-DF.LST <- getData.LST(
+### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+DF.LST <- getData(
     CSV.LST = file.path(data.directory,data.snapshot,"MODIS-LST-Ottawa.csv")
     );
 
-visualize.LST(
+DF.LST <- attach.loess(
     DF.input   = DF.LST,
+    variable   = "LST.night",
+    loess.span = 0.1
+    );
+
+cat("\nstr(DF.LST)\n");
+print( str(DF.LST)   );
+
+visualize.time.series(
+    PNG.output = paste0("plot-LST.png"),
+    DF.input   = DF.LST,
+    variable   = "LST.night",
+    loess.fit  = "LST.night.loess.fit",
+    loess.se   = "LST.night.loess.se",
+    loess.span = 0.1
+    );
+
+### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+DF.air.temp <- getData(
+    CSV.LST = file.path(data.directory,data.snapshot,"Daymet-V4-Air-T-time-series-Ottawa.csv")
+    );
+
+DF.air.temp <- attach.loess(
+    DF.input   = DF.air.temp,
+    variable   = "tmin",
+    loess.span = 0.1
+    );
+
+cat("\nstr(DF.air.temp)\n");
+print( str(DF.air.temp)   );
+
+visualize.time.series(
+    PNG.output = paste0("plot-air-temp.png"),
+    DF.input   = DF.air.temp,
+    variable   = "tmin",
+    loess.fit  = "tmin.loess.fit",
+    loess.se   = "tmin.loess.se",
     loess.span = 0.1
     );
 

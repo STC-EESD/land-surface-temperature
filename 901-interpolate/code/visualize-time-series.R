@@ -59,13 +59,7 @@ visualize.LST_time.plot <- function(
     ) {
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-    cat("\nstr(DF.input) -- visualize.LST_time.plot(.)\n");
-    print( str(DF.input) );
-
-    ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     temp.subtitle <- paste0("loess span = ", loess.span);
-
-    print("A-1");
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     my.ggplot <- initializePlot(subtitle = temp.subtitle);
@@ -74,22 +68,16 @@ visualize.LST_time.plot <- function(
         plot.subtitle = ggplot2::element_text(size = 15, face = "bold")
         );
 
-    print("A-2");
-
     my.ggplot <- my.ggplot + ggplot2::geom_line(
         data    = DF.input,
         mapping = ggplot2::aes(x = date, y = variable)
         );
-
-    print("A-3");
 
     my.ggplot <- my.ggplot + ggplot2::geom_line(
         data    = DF.input,
         mapping = ggplot2::aes(x = date, y = loess.fit),
         color   = 'red'
         );
-
-    print("A-4");
 
     my.ggplot <- my.ggplot + ggplot2::geom_ribbon(
         data    = DF.input,
@@ -98,8 +86,6 @@ visualize.LST_time.plot <- function(
         alpha   = 0.2
         );
 
-    print("A-5");
-
     my.ggplot <- my.ggplot + ggplot2::theme(
         legend.position = "none",
         axis.title.x    = ggplot2::element_blank(),
@@ -107,14 +93,10 @@ visualize.LST_time.plot <- function(
         axis.text.x     = ggplot2::element_text(size = 15, face = "bold", angle = 90, vjust = 0.5)
         );
 
-    print("A-6");
-
     my.ggplot <- my.ggplot + ggplot2::scale_x_date(
         limits      = base::range(DF.input[,'date']),
         date_breaks = "2 months"
         );
-
-    print("A-7");
 
     # my.ggplot <- my.ggplot + ggplot2::geom_point(
     #     data    = DF.temp,
@@ -190,8 +172,6 @@ visualize.LST_time.plot <- function(
         units    = "in",
         dpi      = dots.per.inch
         );
-
-    print("A-8");
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     return( NULL );

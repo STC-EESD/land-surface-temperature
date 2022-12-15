@@ -8,6 +8,13 @@ test.googledrive <- function(
     cat(paste0("\n",thisFunctionName,"() starts.\n\n"));
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+    cat("\nSys.getenv('GARGLE_OAUTH_EMAIL'):\n");
+    print( Sys.getenv('GARGLE_OAUTH_EMAIL'     );
+
+    cat("\nSys.getenv('GARGLE_OAUTH_CACHE'):\n");
+    print( Sys.getenv('GARGLE_OAUTH_CACHE'     );
+
+    ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     options(
         gargle_oauth_email = Sys.getenv("GARGLE_OAUTH_EMAIL"),
         gargle_oauth_cache = Sys.getenv("GARGLE_OAUTH_CACHE")

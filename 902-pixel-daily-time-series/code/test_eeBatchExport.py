@@ -2,106 +2,122 @@
 import ee
 
 def test_eeBatchExport(google_drive_folder):
+    """
+    Purpose: Download all images in the MODIS daily 1km LST poduct from an Earth Engine image collection into the users' Google Drive folder
+    Input: The name of the desired output folder in the users Google Drive
+    Output: A series of .TIF images in the specified Google Drive folder
 
+    """
     thisFunctionName = "test_eeBatchExport"
     print( "\n########## " + thisFunctionName + "() starts ..." )
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-    my_point = ee.Geometry.Point(13.481643640792527,52.48959983479137);
-
-    s2 = ee.ImageCollection('COPERNICUS/S2_HARMONIZED') \
-        .filterDate(ee.Date('2019-05-01'),ee.Date('2019-08-01')) \
-        .filterBounds(my_point);
-
-    n_images = s2.size().getInfo();
-    print("\nn_images (s2)");
-    print(   n_images      );
-
-    ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-    my_polygon = ee.Geometry.Polygon([[
-      [82.60642647743225, 27.163504378052510],
-      [82.60984897613525, 27.161852990137700],
-      [82.61088967323303, 27.163695288375266],
-      [82.60757446289062, 27.165174832309270]
-    ]])
-
-    filtered = ee.ImageCollection('COPERNICUS/S2_HARMONIZED') \
-        .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE',30)) \
-        .filter(ee.Filter.date('2019-02-01','2019-03-01')) \
-        .filter(ee.Filter.bounds(my_polygon)) \
-        .map(maskS2clouds)
-
-    n_images = filtered.size().getInfo()
-    print("\nn_images (filtered)")
-    print(   n_images            )
+    # setting the dates for testing the script
+    #date1 = ee.Date.fromYMD(2022,07,14) # reasonably clear day for most of Canada
+    #date2 - date1.advance(1,"day") #only get one image for download
+    
+    # Get the MODIS LST 1km Daily dataset (From Terra satellite)
+    t_modis = ee.ImageCollection("MODIS/061/MOD11A1") \
+                .filterDate(ee.Date("2022-07-14"),ee.Date("2022-07-15"))
+    
+    # testing output from python
+    #print("Sample modis output from python script: ")
+    #print(t_modis.size().getInfo())
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-    withNdvi = filtered.map(addNDVI)
-
-    n_images <- withNdvi.size().getInfo();
-    print("\nn_images (withNdvi)");
-    print(  n_images             );
-
+    # Get the population centre subset layer from a user's assets
+    popctr_subset = ee.FeatureCollection("projects/patrickgosztonyi-lst/assets/subset_gpc_000b21a_e_WGS84")
+    popctr = ee.FeatureCollection("projects/patrickgosztonyi-lst/assets/gpc_000b21a_e_WGS84")
+    
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-    ndvi = withNdvi.median().select('ndvi')
 
-    stats = ndvi.reduceRegion(**{
-      'reducer'  : ee.Reducer.mean(),
-      'geometry' : my_polygon,
-      'scale'    : 10,
-      'maxPixels': 1e10
-      })
+    # need to cast all imagery bands to 16-bit unsigned integers in order to export the data to a TIF file
+    # (This only works since all the bands except for the two QA bands are already 16-bit Uints)
+    modis_band_names = t_modis.first().bandNames() # get the name and order of the bands from an image
+    new_types = ee.List.repeat("uint16",modis_band_names.length()) # define the desired output band type for eachband in the image
+    band_cast_dict = ee.Dictionary.fromLists(modis_band_names,new_types) #for each band, match it with the desired output type (for input into next command)
+    t_modis_16bit = t_modis.cast(band_cast_dict,modis_band_names) # cast the bands according to the values we set is above three commands
 
-    print("\nstats.getInfo()");
-    print(   stats.getInfo() );
+    # project the image to the equal-area projection
 
-    print("\nstats.get('ndvi').getInfo()\n")
-    print(   stats.get('ndvi').getInfo()   )
+    #get a script with the custom projection definition
+    # Import CRS from this script, See this script for links to source and description
+    #equalarea_proj = require('users/randd-eesd/dev:elijah/canada_wide_projections').ESRI_102001;
+    # manually define the projection info
+    equalarea_proj = 'PROJCS["Canada_Albers_Equal_Area_Conic", \
+                        GEOGCS["GCS_North_American_1983", \
+                            DATUM["D_North_American_1983", \
+                                SPHEROID["GRS_1980",6378137,298.257222101]], \
+                            PRIMEM["Greenwich",0], \
+                                UNIT["Degree",0.0174532925199433]], \
+                        PROJECTION["Albers"], \
+                        PARAMETER["False_Easting",0], \
+                        PARAMETER["False_Northing",0], \
+                        PARAMETER["Central_Meridian",-96], \
+                        PARAMETER["Standard_Parallel_1",50], \
+                        PARAMETER["Standard_Parallel_2",70], \
+                        PARAMETER["Latitude_Of_Origin",40], \
+                        UNIT["Meter",1], \
+                        AUTHORITY["EPSG","102001"]]'
 
-    ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-    image_ids = withNdvi.aggregate_array('system:index').getInfo();
 
-    print("\nlen(image_ids): ", len(image_ids) )
+    # create a mappable function to reproject all images in the collection
+    def _reproject_image_collection(image):
+        
+        return image.reproject(equalarea_proj, None, image.projection().nominalScale())
 
-    print("\nimage_ids")
-    print(   image_ids )
+    # apply the reprojection function
+    t_modis_16bit_ea = t_modis_16bit.map(_reproject_image_collection)
 
-    ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-    temp_image = ee.Image(withNdvi.filter(ee.Filter.eq('system:index',image_ids[0])).first());
-    temp_info  = temp_image.geometry().bounds().getInfo();
+    # need to clip the LST product to the population centre subset boundaries
+    # do this by creating a function to clip and image, and then mapping it over the collection
+    def clip_image_collection(image_collection,feature_collection):
+        '''
+        Purpose: create a function to clip images from a given feature collection that can be mapped 
+            to an image collection
+        Inputs:
+            - image_collection: an ee.ImageCollection() object to be clipped
+            - feature_collection: an ee.FeatureCollection() object to use as the clipping geometry
+        Output:
+            an ee.ImageCollection clipped to the specified feature collection geometry
+        '''
+        def _clip(image):
+            return image.clip(feature_collection.union().geometry()) #union is used to avoid polygon overlaps, just in case
+        
+        return image_collection.map(_clip)
+    #end function
 
-    print("\ntemp_info");
-    print(   temp_info );
+    # apply the clipping function
+    t_modis_16bit_clip = clip_image_collection(t_modis_16bit_ea,popctr_subset)
 
+    # will need to reproject the data, to an equal area projection (use the one Elijah created)
+    # t_modis_16bit_clip = ''#reproject
+
+    # get the IDs of each image in the collection, to use as index in the loop for exporting them
+    image_ids = t_modis_16bit_clip.aggregate_array('system:index').getInfo()
+
+    # iterate through all the images in the collection, then create and run export tasks
     for i, image_id in enumerate(image_ids):
-        temp_image = ee.Image(withNdvi.filter(ee.Filter.eq('system:index',image_id)).first());
+        temp_image = t_modis_16bit_clip.filter(ee.Filter.eq('system:index',image_id)).first() #find the image in the collection matching the ID specified
         temp_task  = ee.batch.Export.image.toDrive(**{
-            'image'         : temp_image.select('ndvi'),
+            'image'         : temp_image, #get all bands
             'description'   : 'Image Export {}'.format(i+1),
-            'fileNamePrefix': temp_image.id().getInfo(),
+            'fileNamePrefix': "popctr_subset_clip_LST_"+temp_image.id().getInfo(),
             'folder'        : google_drive_folder, # 'earthengine/patrick', #folder names with separators (e.g. 'path/to/file') are interpreted as literal strings, not system paths.
-            'scale'         : 100,
-            'region'        : temp_image.geometry().bounds().getInfo()['coordinates'],
+            'scale'         : temp_image.projection().nominalScale().getInfo(), #1000 (metres) for testing, but will need to match the input dataset (926.625[...] or use the native resolution) 
+            'region'        : popctr_subset.geometry().bounds(),
             'maxPixels'     : 1e10
             })
-        temp_task.start();
-        print("\nStarted task: " + str(image_id) + "\n");
+        temp_task.start()
+        print("\nStarted task: " + str(image_id) + "\n")
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+    #'''
+
     print( "\n########## " + thisFunctionName + "() exits ..." )
     return( None )
+    
 
 ##### ##### ##### ##### #####
-def maskS2clouds(image):
-  qa = image.select('QA60')
-  cloudBitMask  = 1 << 10
-  cirrusBitMask = 1 << 11
-  mask = qa.bitwiseAnd(cloudBitMask).eq(0).And(
-             qa.bitwiseAnd(cirrusBitMask).eq(0))
-  return image.updateMask(mask) \
-      .select("B.*") \
-      .copyProperties(image, ["system:time_start"])
 
-def addNDVI(image):
-  ndvi = image.normalizedDifference(['B8','B4']).rename('ndvi')
-  return image.addBands(ndvi)
+#end of file

@@ -1,4 +1,4 @@
-
+# method 1.0.2
 import ee, math
 
 # import canada_wide_projections
@@ -26,7 +26,7 @@ def test_eeBatchExport(google_drive_folder):
 
     # Import geography
     gPC_4326 = ee.FeatureCollection("projects/eperez-cloud/assets/gpc_000b21a_e_4326")
-    # print("Population centres",gPC_4326)
+    # print("Population centres", gPC_4326)
 
     # Import water polygons for masking
     # waterPolys = ee.FeatureCollection("projects/eperez-cloud/assets/canVec1MHydroA_intersect_gpc_000b21a_a")
@@ -36,11 +36,11 @@ def test_eeBatchExport(google_drive_folder):
     # Import LST image collection.
     # https:#developers.google.com/earth-engine/datasets/catalog/MODIS_061_MOD11A1
     modis = ee.ImageCollection('MODIS/061/MOD11A1')
-    # print("MODIS collection",modis.limit(2))
+    # print("MODIS collection", modis.limit(2))
 
     # Select day or night LST data band. LST_Day_1km, LST_Night_1km
-    MODIS_LST_day   = modis.select(['LST_Day_1km','QC_Day'],     ['LST_1km','QC'])
-    MODIS_LST_night = modis.select(['LST_Night_1km','QC_Night'], ['LST_1km','QC'])
+    MODIS_LST_day   = modis.select(['LST_Day_1km', 'QC_Day'],     ['LST_1km', 'QC'])
+    MODIS_LST_night = modis.select(['LST_Night_1km', 'QC_Night'], ['LST_1km', 'QC'])
     # print("MODIS Day", MODIS_LST_day.limit(1), "MODIS Night", MODIS_LST_night.limit(1))
 
     # 'switches' ####################################
@@ -71,8 +71,8 @@ def test_eeBatchExport(google_drive_folder):
 
     def _mappableQAfilter(i):
         QA            = i.select('QC')
-        baseQuality   = ee.Image(getQABitsIntoSingleBand(QA,0,1,'baseQA'))
-        LSTQuality    = ee.Image(getQABitsIntoSingleBand(QA,6,7,'LST_error'))
+        baseQuality   = ee.Image(getQABitsIntoSingleBand(QA, 0, 1, 'baseQA'))
+        LSTQuality    = ee.Image(getQABitsIntoSingleBand(QA, 6, 7, 'LST_error'))
         baseMask      = baseQuality.neq(2).And(baseQuality.neq(3))
         LSTmask       = LSTQuality.lt(3)
         return i.select('LST_1km').updateMask(baseMask).updateMask(LSTmask)

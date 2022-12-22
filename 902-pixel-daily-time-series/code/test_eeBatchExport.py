@@ -51,12 +51,12 @@ def test_eeBatchExport(google_drive_folder):
                             PRIMEM["Greenwich",0], \
                                 UNIT["Degree",0.0174532925199433]], \
                         PROJECTION["Albers"], \
-                        PARAMETER["False_Easting",0], \
-                        PARAMETER["False_Northing",0], \
                         PARAMETER["Central_Meridian",-96], \
+                        PARAMETER["Latitude_Of_Origin",40], \
                         PARAMETER["Standard_Parallel_1",50], \
                         PARAMETER["Standard_Parallel_2",70], \
-                        PARAMETER["Latitude_Of_Origin",40], \
+                        PARAMETER["False_Easting",0], \
+                        PARAMETER["False_Northing",0], \
                         UNIT["Meter",1], \
                         AUTHORITY["EPSG","102001"]]'
 

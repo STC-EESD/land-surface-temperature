@@ -3,7 +3,6 @@ import ee, math
 
 # import canada_wide_projections
 # from canada_wide_projections import ESRI_102001
-# from canada_wide_projections import ESRI_102008
 
 def test_eeBatchExport(google_drive_folder):
     

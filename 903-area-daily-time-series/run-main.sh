@@ -25,7 +25,7 @@ else
 fi
 
 ########################################################
-googleDriveFolder=earthengine/elijah
+googleDriveFolder=earthengine/ken
 
 ########################################################
 myPythonScript=${codeDIR}/main.py

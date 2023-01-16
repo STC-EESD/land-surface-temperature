@@ -39,14 +39,31 @@ logging.basicConfig(filename='log.debug',level=logging.DEBUG)
 # import seaborn as sns
 
 ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-from test_eeAuthenticate import test_eeAuthenticate
-from test_eeBatchExport  import test_eeBatchExport
+from batchExportByYear      import batchExportByYear
+from eeImageCollectionUtils import imageCollectionGetYearRange
+from test_eeAuthenticate    import test_eeAuthenticate
+from test_eeBatchExport     import test_eeBatchExport
 
 ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
 test_eeAuthenticate()
-test_eeBatchExport(
-    google_drive_folder = google_drive_folder
-    )
+
+modis_061_11A1 = 'MODIS/061/MOD11A1';
+
+myYearRange = imageCollectionGetYearRange(
+    imageCollectionName = modis_061_11A1
+    );
+
+for year in myYearRange[:5]:
+    print(year);
+    batchExportByYear(
+        year                = year,
+        imageCollectionName = modis_061_11A1,
+        google_drive_folder = google_drive_folder
+        );
+
+# test_eeBatchExport(
+#     google_drive_folder = google_drive_folder
+#     )
 
 # ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
 

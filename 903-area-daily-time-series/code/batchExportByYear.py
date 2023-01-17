@@ -50,7 +50,7 @@ def batchExportByYear(
 
     # 'switches' ####################################
     # 'switches' ####################################
-    timeFrame = 'winter'
+    timeFrame = 'annual' # 'winter'
     dayOrNight = 'day'
     visibilityGTE = 0.5
     # exportFolder = 'LST_PC_2000-2022_Hyd250K_QAmsk'
@@ -132,24 +132,28 @@ def batchExportByYear(
         return ee.Image(image).updateMask(mask).copyProperties(image)
 
     def _seasonLST(yearImage, ithCollection):
+
         # get the year property
         year = yearImage.get('year')
-        # this avoids 5 very similar scripts that differ only by date range
-        if timeFrame == 'winter':
-            startDate = ee.Date.fromYMD(year, 1, 1).advance(-1, 'month')
-            endDate = ee.Date.fromYMD(year, 3, 31).advance(-1, 'month')
-        elif timeFrame == 'spring':
-            startDate = ee.Date.fromYMD(year, 3, 1)
-            endDate = ee.Date.fromYMD(year, 5, 31)
-        elif timeFrame == 'summer':
-            startDate = ee.Date.fromYMD(year, 6, 1)
-            endDate = ee.Date.fromYMD(year, 8, 31)
-        elif timeFrame == 'fall':
-            startDate = ee.Date.fromYMD(year, 9, 1)
-            endDate = ee.Date.fromYMD(year, 11, 30)
-        elif timeFrame == 'winter':
-            startDate = ee.Date.fromYMD(year, 1, 1).advance(-1, 'month')
-            endDate = ee.Date.fromYMD(year, 11, 30)
+
+        # # this avoids 5 very similar scripts that differ only by date range
+        # if timeFrame == 'annual':
+        #     startDate = ee.Date.fromYMD(year,  1,  1);
+        #       endDate = ee.Date.fromYMD(year, 12, 31).advance(1,'day');
+        # elif timeFrame == 'spring':
+        #     startDate = ee.Date.fromYMD(year, 3, 1)
+        #       endDate = ee.Date.fromYMD(year, 5, 31)
+        # elif timeFrame == 'summer':
+        #     startDate = ee.Date.fromYMD(year, 6, 1)
+        #       endDate = ee.Date.fromYMD(year, 8, 31)
+        # elif timeFrame == 'fall':
+        #     startDate = ee.Date.fromYMD(year, 9, 1)
+        #       endDate = ee.Date.fromYMD(year, 11, 30)
+        # elif timeFrame == 'winter':
+        #     startDate = ee.Date.fromYMD(year, 1, 1).advance(-1,'month')
+        #       endDate = ee.Date.fromYMD(year, 11, 30)
+        startDate = ee.Date.fromYMD(year,  1,  1);
+        endDate   = ee.Date.fromYMD(year, 12, 31).advance(1,'day');
 
         if dayOrNight == 'day':
             modisDayOrNight = MODIS_LST_day
@@ -157,14 +161,14 @@ def batchExportByYear(
             modisDayOrNight = MODIS_LST_night
 
         filtered = (ee.ImageCollection(modisDayOrNight)
-            .filter(ee.Filter.date(startDate, endDate))
+            .filter(ee.Filter.date(startDate,endDate))
             .map(_reprojectImage) # equal area projection
             .map(_mappableQAfilter) # QA masking
             .map(_setDateDetails)) # apply dates
 
         return ee.ImageCollection(ithCollection).merge(ee.ImageCollection(filtered))
 
-    def _processEveryLocationReturnFeatCol(aPlace, ithListItem):
+    def _processEveryLocationReturnFeatCol(aPlace,ithListItem):
         # one feature at a time
         aPlace = ee.Feature(aPlace)
 
@@ -180,8 +184,8 @@ def batchExportByYear(
         # can use the filter greaterThanOrEquals('day', 1) on it afterwards.
         # Otherwise EE doesn't know what kind of data yearImages is.
         timePeriodImageCollection = ee.ImageCollection(
-            yearImages.iterate(_seasonLST, yearImages)
-            ).filter(ee.Filter.greaterThanOrEquals('day', 1))
+            yearImages.iterate(_seasonLST,yearImages)
+            ).filter(ee.Filter.greaterThanOrEquals('day',1))
         # print('timePeriodImageCollection', timePeriodImageCollection)
         def _scoopImageValues(image, ithList):
             # how much of the interior of a PC is visible on a given day?
@@ -213,17 +217,17 @@ def batchExportByYear(
             # or img. coll. with these values attached I suspect.
             return ee.List(ithList).cat(ee.List([meanValue]))
 
-        seriesOfDates = (timePeriodImageCollection.aggregate_array('dateString') )
-        seriesOfLocationValues = (timePeriodImageCollection.iterate(_scoopImageValues, []))
+        seriesOfDates          = (timePeriodImageCollection.aggregate_array('dateString'));
+        seriesOfLocationValues = (timePeriodImageCollection.iterate(_scoopImageValues,[]));
         # earlier implementation had a time series of dates
         # and values attached to each location as a dictionary:
         # d = ee.Dictionary.fromLists(seriesOfDates, seriesOfLocationValues) #.aside(print)
         # aPlaceWDateValues = aPlace.set('dateValues', d)
 
-        zipped = seriesOfDates.zip(seriesOfLocationValues).flatten()
-        aPlaceWDateValues = aPlace.set(zipped)
+        zipped = seriesOfDates.zip(seriesOfLocationValues).flatten();
+        aPlaceWDateValues = aPlace.set(zipped);
 
-        ithListItem = ee.List(ithListItem).add(aPlaceWDateValues)
+        ithListItem = ee.List(ithListItem).add(aPlaceWDateValues);
 
         return ithListItem
 
@@ -244,7 +248,7 @@ def batchExportByYear(
 
     # dynamically construct the file name and export task
     visibilityGTE = round(visibilityGTE*10);
-    exportString = 'MODIS_' + str(year) +'_'+ period +'_'+ dayOrNight + '_LSTbyPC_unweighted_visGTE_' + str(visibilityGTE) + '_wm_qam';
+    exportString = 'MODIS_LSTbyPC_unweighted_' + str(year) +'_'+ timeFrame +'_'+ dayOrNight + '_visGTE_' + str(visibilityGTE) + '_wm_qam';
 
     # if we can leverage the loops and the batch export
     # of the python api this could all be one-shot:

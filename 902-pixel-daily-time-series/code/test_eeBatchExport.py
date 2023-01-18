@@ -15,7 +15,7 @@ def test_eeBatchExport(google_drive_folder):
     
     # Get the MODIS LST 1km Daily dataset (From Terra satellite)
     t_modis = ee.ImageCollection("MODIS/061/MOD11A1") \
-                .filterDate(ee.Date("2022-07-19"),ee.Date("2022-07-20"))
+                .filterDate(ee.Date("2022-07-19"),ee.Date("2022-07-26"))
     
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     # Get the population centre subset layer from a user's assets
@@ -51,6 +51,8 @@ def test_eeBatchExport(google_drive_folder):
     
     # cast the project WKT string into an ee.Projection object
     ee_customproj = ee.Projection(wkt_customproj)
+
+    print("NOTICE: The intended output projection of the data is an Albers Equal Area CRS (EPSG:102001) centred over Canada.\n However, (as of 2023/Jan/18) due to a known bug with Earth Engine outputs using a custom-defined projection, the output datasets DO NOT have the correct Central Latitude or Central Meridian (defaulting to (0,0)) despite otherwise having all other aspects correctly transformed. \n Since the translation of origins does not correctly occur, the output datasets must have their projection defined as EPSG:102001 before use with other GIS data or correct display on a map. (f.ex. Can be done using QGIS's 'Assign Projection' tool - note this is NOT the same as reprojection).")
 
     # need to clip the LST product to the population centre subset boundaries
     # do this by creating a function to clip and image, and then mapping it over the collection

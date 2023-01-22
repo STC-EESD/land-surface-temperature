@@ -17,7 +17,7 @@ def batchExportByYear(
     ):
 
     thisFunctionName = "batchExportByYear";
-    print( "\n### " + thisFunctionName + " starts (batchID:" + str(batchID) + ", year:" + str(year) + ") ...\n" );
+    print( "\n### " + thisFunctionName + " starts (" + dayOrNight + ", batchID:" + str(batchID) + ", year:" + str(year) + ", visibilityGTE:" + str(visibilityGTE) + ") ...\n" );
 
     # ####################################
     # ####################################

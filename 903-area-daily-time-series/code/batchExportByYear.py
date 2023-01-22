@@ -22,6 +22,15 @@ def batchExportByYear(
     visibilityGTE = 0.5;
     dayOrNight    = 'day'
 
+    # Import CRS from this script
+    # See this script for links to source and description
+    # proj = canada_wide_projections.ESRI_102001
+    # proj = ESRI_102001
+    proj = ee.Projection('PROJCS["Canada_Albers_Equal_Area_Conic",GEOGCS["GCS_North_American_1983",DATUM["D_North_American_1983",SPHEROID["GRS_1980",6378137,298.257222101]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433]],PROJECTION["Albers"],PARAMETER["False_Easting",0],PARAMETER["False_Northing",0],PARAMETER["Central_Meridian",-96],PARAMETER["Standard_Parallel_1",50],PARAMETER["Standard_Parallel_2",70],PARAMETER["Latitude_Of_Origin",40],UNIT["Meter",1],AUTHORITY["EPSG","102001"]]')
+
+    # Import water polygons for masking
+    waterPolys2 = ee.FeatureCollection("users/randd-eesd/canada/canvec250KCoincMergeToDissolve");
+
     # Import LST image collection.
     # https:#developers.google.com/earth-engine/datasets/catalog/MODIS_061_MOD11A1
     # modis = ee.ImageCollection('MODIS/061/MOD11A1')
@@ -40,6 +49,7 @@ def batchExportByYear(
     MODIS_LST_night = modis.select(['LST_Night_1km', 'QC_Night'], ['LST_1km', 'QC']);
     # print("MODIS Day", MODIS_LST_day.limit(1), "MODIS Night", MODIS_LST_night.limit(1))
 
+    # ####################################
     def _reprojectImage(image):
         transformed = image.reproject(proj, None, image.projection().nominalScale())
         return ee.Image(transformed).copyProperties(image)
@@ -199,17 +209,6 @@ def batchExportByYear(
     # ####################################
     # ####################################
 
-    # MODIS PC LST 2000-2022
-    # a line-by-line manual conversion of MODIS_LST_ByGeo_singleVals_2placeDate
-    #     import ee
-    #     ee.Initialize()
-
-    # Import CRS from this script
-    # See this script for links to source and description
-    # proj = canada_wide_projections.ESRI_102001
-    # proj = ESRI_102001
-    proj = ee.Projection('PROJCS["Canada_Albers_Equal_Area_Conic",GEOGCS["GCS_North_American_1983",DATUM["D_North_American_1983",SPHEROID["GRS_1980",6378137,298.257222101]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433]],PROJECTION["Albers"],PARAMETER["False_Easting",0],PARAMETER["False_Northing",0],PARAMETER["Central_Meridian",-96],PARAMETER["Standard_Parallel_1",50],PARAMETER["Standard_Parallel_2",70],PARAMETER["Latitude_Of_Origin",40],UNIT["Meter",1],AUTHORITY["EPSG","102001"]]')
-
     # Import geography
     # gPC_4326 = ee.FeatureCollection("projects/eperez-cloud/assets/gpc_000b21a_e_4326");
     # gPC_4326 = ee.FeatureCollection(gPC_4326.toList(50));
@@ -221,13 +220,6 @@ def batchExportByYear(
         );
     myFeatureCollection = myFeatureCollection.filter(ee.Filter.eq('batchID',batchID));
     print("myFeatureCollection.size().getInfo():",myFeatureCollection.size().getInfo());
-
-    # Import water polygons for masking
-    # waterPolys = ee.FeatureCollection("projects/eperez-cloud/assets/canVec1MHydroA_intersect_gpc_000b21a_a")
-    # canvec250KCoincMergeToDissolve = ee.FeatureCollection("users/randd-eesd/canada/canvec250KCoincMergeToDissolve");
-    # waterPolys2 = ee.FeatureCollection("projects/eperez-cloud/assets/canVec_merge_to_dissolve_250K_HydroA")
-    waterPolys2 = ee.FeatureCollection("users/randd-eesd/canada/canvec250KCoincMergeToDissolve");
-    # print("Water bodies coincident with pop centres", waterPolys2.limit(5))
 
     FinalProduct = myFeatureCollection.iterate(_processEveryLocationReturnFeatCol,ee.List([]))
     FinalProduct = ee.FeatureCollection(ee.List(FinalProduct).map(lambda i : ee.Feature(i)))

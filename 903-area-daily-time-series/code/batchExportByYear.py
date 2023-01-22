@@ -1,63 +1,44 @@
-# method 1.0.2
-import ee, math
+
+import ee, math;
+from coe import eeCollection_addIndexes, eeCollection_addBatchIDs;
 
 # import canada_wide_projections
 # from canada_wide_projections import ESRI_102001
 
 def batchExportByYear(
+    batchSize,
+    batchID,
     year,
+    featureCollectionName,
     imageCollectionName,
     google_drive_folder
     ):
 
     thisFunctionName = "batchExportByYear";
-    print( "\n########## " + thisFunctionName + "("+ str(year) +") starts ..." );
+    print( "\n### " + thisFunctionName + " starts (batchID:" + str(batchID) + ", year:" + str(year) + ") ...\n" );
 
-    # MODIS PC LST 2000-2022
-    # a line-by-line manual conversion of MODIS_LST_ByGeo_singleVals_2placeDate
-    #     import ee
-    #     ee.Initialize()
-
-    # Import CRS from this script
-    # See this script for links to source and description
-    # proj = canada_wide_projections.ESRI_102001
-    # proj = ESRI_102001
-    proj = ee.Projection('PROJCS["Canada_Albers_Equal_Area_Conic",GEOGCS["GCS_North_American_1983",DATUM["D_North_American_1983",SPHEROID["GRS_1980",6378137,298.257222101]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433]],PROJECTION["Albers"],PARAMETER["False_Easting",0],PARAMETER["False_Northing",0],PARAMETER["Central_Meridian",-96],PARAMETER["Standard_Parallel_1",50],PARAMETER["Standard_Parallel_2",70],PARAMETER["Latitude_Of_Origin",40],UNIT["Meter",1],AUTHORITY["EPSG","102001"]]')
-
-    # Import geography
-    gPC_4326 = ee.FeatureCollection("projects/eperez-cloud/assets/gpc_000b21a_e_4326");
-    gPC_4326 = ee.FeatureCollection(gPC_4326.toList(5));
-    # print("Population centres", gPC_4326)
-
-    # Import water polygons for masking
-    # waterPolys = ee.FeatureCollection("projects/eperez-cloud/assets/canVec1MHydroA_intersect_gpc_000b21a_a")
-    # canvec250KCoincMergeToDissolve = ee.FeatureCollection("users/randd-eesd/canada/canvec250KCoincMergeToDissolve");
-    # waterPolys2 = ee.FeatureCollection("projects/eperez-cloud/assets/canVec_merge_to_dissolve_250K_HydroA")
-    waterPolys2 = ee.FeatureCollection("users/randd-eesd/canada/canvec250KCoincMergeToDissolve");
-
-    # print("Water bodies coincident with pop centres", waterPolys2.limit(5))
+    # ####################################
+    # ####################################
+    visibilityGTE = 0.5;
+    dayOrNight    = 'day'
 
     # Import LST image collection.
     # https:#developers.google.com/earth-engine/datasets/catalog/MODIS_061_MOD11A1
     # modis = ee.ImageCollection('MODIS/061/MOD11A1')
-    modis = ee.ImageCollection(imageCollectionName);
+    # modis = ee.ImageCollection(imageCollectionName).filterDate(
+    #     str(year   )+ '-01-01',
+    #     str(year+1) + '-01-01'
+    #     );
+    startDate = ee.Date.fromYMD(year, 1, 1);
+    endDate   = ee.Date.fromYMD(year,12,31).advance(1,'day');
+    modis     = ee.ImageCollection(imageCollectionName).filter(ee.Filter.date(startDate,endDate));
+    print("modis.size().getInfo():",modis.size().getInfo());
     # print("MODIS collection", modis.limit(2))
 
     # Select day or night LST data band. LST_Day_1km, LST_Night_1km
     MODIS_LST_day   = modis.select(['LST_Day_1km',   'QC_Day'  ], ['LST_1km', 'QC']);
     MODIS_LST_night = modis.select(['LST_Night_1km', 'QC_Night'], ['LST_1km', 'QC']);
     # print("MODIS Day", MODIS_LST_day.limit(1), "MODIS Night", MODIS_LST_night.limit(1))
-
-    # 'switches' ####################################
-    # 'switches' ####################################
-    timeFrame = 'annual' # 'winter'
-    dayOrNight = 'day'
-    visibilityGTE = 0.5
-    # exportFolder = 'LST_PC_2000-2022_Hyd250K_QAmsk'
-    exportFolder = google_drive_folder
-
-    # 'switches' ####################################
-    # 'switches' ####################################
 
     def _reprojectImage(image):
         transformed = image.reproject(proj, None, image.projection().nominalScale())
@@ -131,29 +112,13 @@ def batchExportByYear(
         mask = ee.Image.constant(1).clip(waterPolys2).mask().Not()
         return ee.Image(image).updateMask(mask).copyProperties(image)
 
-    def _seasonLST(yearImage, ithCollection):
+    def _seasonLST(yearImage,ithCollection):
 
         # get the year property
         year = yearImage.get('year')
 
-        # # this avoids 5 very similar scripts that differ only by date range
-        # if timeFrame == 'annual':
-        #     startDate = ee.Date.fromYMD(year,  1,  1);
-        #       endDate = ee.Date.fromYMD(year, 12, 31).advance(1,'day');
-        # elif timeFrame == 'spring':
-        #     startDate = ee.Date.fromYMD(year, 3, 1)
-        #       endDate = ee.Date.fromYMD(year, 5, 31)
-        # elif timeFrame == 'summer':
-        #     startDate = ee.Date.fromYMD(year, 6, 1)
-        #       endDate = ee.Date.fromYMD(year, 8, 31)
-        # elif timeFrame == 'fall':
-        #     startDate = ee.Date.fromYMD(year, 9, 1)
-        #       endDate = ee.Date.fromYMD(year, 11, 30)
-        # elif timeFrame == 'winter':
-        #     startDate = ee.Date.fromYMD(year, 1, 1).advance(-1,'month')
-        #       endDate = ee.Date.fromYMD(year, 11, 30)
-        startDate = ee.Date.fromYMD(year,  1,  1);
-        endDate   = ee.Date.fromYMD(year, 12, 31).advance(1,'day');
+        startDate = ee.Date.fromYMD(year, 1, 1);
+        endDate   = ee.Date.fromYMD(year,12,31).advance(1,'day');
 
         if dayOrNight == 'day':
             modisDayOrNight = MODIS_LST_day
@@ -231,36 +196,50 @@ def batchExportByYear(
 
         return ithListItem
 
-    FinalProduct = gPC_4326.iterate(_processEveryLocationReturnFeatCol,ee.List([]))
+    # ####################################
+    # ####################################
+
+    # MODIS PC LST 2000-2022
+    # a line-by-line manual conversion of MODIS_LST_ByGeo_singleVals_2placeDate
+    #     import ee
+    #     ee.Initialize()
+
+    # Import CRS from this script
+    # See this script for links to source and description
+    # proj = canada_wide_projections.ESRI_102001
+    # proj = ESRI_102001
+    proj = ee.Projection('PROJCS["Canada_Albers_Equal_Area_Conic",GEOGCS["GCS_North_American_1983",DATUM["D_North_American_1983",SPHEROID["GRS_1980",6378137,298.257222101]],PRIMEM["Greenwich",0],UNIT["Degree",0.0174532925199433]],PROJECTION["Albers"],PARAMETER["False_Easting",0],PARAMETER["False_Northing",0],PARAMETER["Central_Meridian",-96],PARAMETER["Standard_Parallel_1",50],PARAMETER["Standard_Parallel_2",70],PARAMETER["Latitude_Of_Origin",40],UNIT["Meter",1],AUTHORITY["EPSG","102001"]]')
+
+    # Import geography
+    # gPC_4326 = ee.FeatureCollection("projects/eperez-cloud/assets/gpc_000b21a_e_4326");
+    # gPC_4326 = ee.FeatureCollection(gPC_4326.toList(50));
+    myFeatureCollection = ee.FeatureCollection(featureCollectionName);
+    myFeatureCollection = eeCollection_addIndexes(myFeatureCollection);
+    myFeatureCollection = eeCollection_addBatchIDs(
+        inputCollection = myFeatureCollection,
+        batchSize       = batchSize
+        );
+    myFeatureCollection = myFeatureCollection.filter(ee.Filter.eq('batchID',batchID));
+    print("myFeatureCollection.size().getInfo():",myFeatureCollection.size().getInfo());
+
+    # Import water polygons for masking
+    # waterPolys = ee.FeatureCollection("projects/eperez-cloud/assets/canVec1MHydroA_intersect_gpc_000b21a_a")
+    # canvec250KCoincMergeToDissolve = ee.FeatureCollection("users/randd-eesd/canada/canvec250KCoincMergeToDissolve");
+    # waterPolys2 = ee.FeatureCollection("projects/eperez-cloud/assets/canVec_merge_to_dissolve_250K_HydroA")
+    waterPolys2 = ee.FeatureCollection("users/randd-eesd/canada/canvec250KCoincMergeToDissolve");
+    # print("Water bodies coincident with pop centres", waterPolys2.limit(5))
+
+    FinalProduct = myFeatureCollection.iterate(_processEveryLocationReturnFeatCol,ee.List([]))
     FinalProduct = ee.FeatureCollection(ee.List(FinalProduct).map(lambda i : ee.Feature(i)))
     # print('FinalProduct', FinalProduct)
 
-    if timeFrame == 'winter':
-        period = '1Winter'
-    elif timeFrame == 'spring':
-        period = '2Spring'
-    elif timeFrame == 'summer':
-        period = '3Summer'
-    elif timeFrame == 'fall':
-        period = '4Fall'
-    elif timeFrame == 'annual':
-        period = '0Annual'
-
     # dynamically construct the file name and export task
-    visibilityGTE = round(visibilityGTE*10);
-    exportString = 'MODIS_LSTbyPC_unweighted_' + str(year) +'_'+ timeFrame +'_'+ dayOrNight + '_visGTE_' + str(visibilityGTE) + '_wm_qam';
-
-    # if we can leverage the loops and the batch export
-    # of the python api this could all be one-shot:
-    #
-    # for d in ('day', 'night')
-    #     for y in enumerate(years)
-    #         for s in ('winter', 'spring', 'summer', 'fall', 'annual')
-    #             for p in enumerate(table)
+    # visibilityGTE = round(visibilityGTE*10);
+    exportString = 'LST_' + '{:04d}'.format(batchID) +'_'+ str(year) +'_'+ dayOrNight + '_visGTE_' + str(visibilityGTE).replace('.','pt');
 
     temp_task = ee.batch.Export.table.toDrive(
         collection     = FinalProduct, # FinalProduct.getInfo(),
-        folder         = exportFolder,
+        folder         = google_drive_folder,
         description    = exportString,
         fileNamePrefix = exportString,
         fileFormat     = 'CSV'
@@ -268,5 +247,5 @@ def batchExportByYear(
     temp_task.start();
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-    print( "\n### " + thisFunctionName + "() exits ..." )
+    print( "\n### " + thisFunctionName + " exits (batchID:" + str(batchID) + ", year:" + str(year) + ") ...\n" );
     return( None );

@@ -39,33 +39,45 @@ logging.basicConfig(filename='log.debug',level=logging.DEBUG)
 # import seaborn as sns
 
 ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-from batchExportByYear      import batchExportByYear
-from eeImageCollectionUtils import imageCollectionGetYearRange
-from test_eeAuthenticate    import test_eeAuthenticate
-from test_eeBatchExport     import test_eeBatchExport
+from batchExportByYear        import batchExportByYear;
+from eeFeatureCollectionUtils import featureCollectionGetBatches;
+from eeImageCollectionUtils   import imageCollectionGetYearRange;
+from test_eeAuthenticate      import test_eeAuthenticate;
+from test_eeBatchExport       import test_eeBatchExport;
 
 ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-test_eeAuthenticate()
+test_eeAuthenticate();
 
-modis_061_11A1 = 'MODIS/061/MOD11A1';
+popCentreGeometries = 'projects/eperez-cloud/assets/gpc_000b21a_e_4326';
+modis_061_11A1      = 'MODIS/061/MOD11A1';
+batchSize           = 5;
+
+batchIDs = featureCollectionGetBatches(
+    featureCollectionName = popCentreGeometries,
+    batchSize             = batchSize,
+    google_drive_folder   = google_drive_folder,
+    exportDescription     = 'DF-popCenter-batch',
+    exportFileNamePrefix  = 'DF-popCenter-batch'
+    );
+print("\nbatchIDs:\n",batchIDs,"\n");
 
 myYearRange = imageCollectionGetYearRange(
     imageCollectionName = modis_061_11A1
     );
+print("\nmyYearRange:",myYearRange);
 
-for year in myYearRange[:5]:
-    print(year);
-    batchExportByYear(
-        year                = year,
-        imageCollectionName = modis_061_11A1,
-        google_drive_folder = google_drive_folder
-        );
+for batchID in batchIDs[:5]:
+    for year in myYearRange[:5]:
+        batchExportByYear(
+            batchSize             = batchSize,
+            batchID               = batchID,
+            year                  = year,
+            featureCollectionName = popCentreGeometries,
+            imageCollectionName   = modis_061_11A1,
+            google_drive_folder   = google_drive_folder
+            );
 
-# test_eeBatchExport(
-#     google_drive_folder = google_drive_folder
-#     )
-
-# ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
 
 ##################################################
 ##################################################

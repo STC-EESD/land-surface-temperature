@@ -34,6 +34,6 @@ def imageCollectionGetYearRange(imageCollectionName):
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     print( "\n########## " + thisFunctionName + "() exits ..." )
-    return( range(yearFirst,yearLast,1) );
+    return( range(yearFirst,yearLast+1,1) );
 
 ##### ##### ##### ##### #####

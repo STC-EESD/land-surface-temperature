@@ -11,7 +11,9 @@ def batchExportByYear(
     year,
     featureCollectionName,
     imageCollectionName,
-    google_drive_folder
+    google_drive_folder,
+    visibilityGTE = 0.5,
+    dayOrNight    = 'day'
     ):
 
     thisFunctionName = "batchExportByYear";
@@ -19,8 +21,6 @@ def batchExportByYear(
 
     # ####################################
     # ####################################
-    visibilityGTE = 0.5;
-    dayOrNight    = 'day'
 
     # Import CRS from this script
     # See this script for links to source and description
@@ -34,10 +34,6 @@ def batchExportByYear(
     # Import LST image collection.
     # https:#developers.google.com/earth-engine/datasets/catalog/MODIS_061_MOD11A1
     # modis = ee.ImageCollection('MODIS/061/MOD11A1')
-    # modis = ee.ImageCollection(imageCollectionName).filterDate(
-    #     str(year   )+ '-01-01',
-    #     str(year+1) + '-01-01'
-    #     );
     startDate = ee.Date.fromYMD(year, 1, 1);
     endDate   = ee.Date.fromYMD(year,12,31).advance(1,'day');
     modis     = ee.ImageCollection(imageCollectionName).filter(ee.Filter.date(startDate,endDate));
@@ -45,9 +41,29 @@ def batchExportByYear(
     # print("MODIS collection", modis.limit(2))
 
     # Select day or night LST data band. LST_Day_1km, LST_Night_1km
-    MODIS_LST_day   = modis.select(['LST_Day_1km',   'QC_Day'  ], ['LST_1km', 'QC']);
-    MODIS_LST_night = modis.select(['LST_Night_1km', 'QC_Night'], ['LST_1km', 'QC']);
+    # MODIS_LST_day   = modis.select(['LST_Day_1km',   'QC_Day'  ], ['LST_1km', 'QC']);
+    # MODIS_LST_night = modis.select(['LST_Night_1km', 'QC_Night'], ['LST_1km', 'QC']);
     # print("MODIS Day", MODIS_LST_day.limit(1), "MODIS Night", MODIS_LST_night.limit(1))
+
+    if dayOrNight == 'day':
+        modis = modis.select(['LST_Day_1km',   'QC_Day'  ], ['LST_1km', 'QC']);
+    elif dayOrNight == 'night':
+        modis = modis.select(['LST_Night_1km', 'QC_Night'], ['LST_1km', 'QC']);
+
+    # ####################################
+    # def scaleLSTtoCelsius(image):
+    #     # create a constant raster with scale value (0.02)
+    #     # return image.multiply(ee.Image.constant(0.02)).add(ee.Image.constant(-273.15)).copyProperties(image,['system:time_start']);
+    #     return image.multiply(ee.Image.constant(0.02)).add(ee.Image.constant(-273.15)).copyProperties(image);
+
+    # def _scaleLSTtoCelsius(image):
+    #     return image.select('LST_1km').multiply(ee.Image.constant(0.02)).add(ee.Image.constant(-273.15)).copyProperties(image);
+
+    def _scaleLSTtoCelsius(image):
+        bandCelsiusLST = image.select('LST_1km').multiply(ee.Image.constant(0.02)).add(ee.Image.constant(-273.15));
+        return image.addBands(srcImg = bandCelsiusLST, names = ['LST_1km'], overwrite = True);
+
+    modis = modis.map(_scaleLSTtoCelsius);
 
     # ####################################
     def _reprojectImage(image):
@@ -68,12 +84,12 @@ def batchExportByYear(
 
     def _mappableQAfilter(i):
         # choose the QA band and use it to create and apply masks
-        QA            = i.select('QC')
-        baseQuality   = ee.Image(getQABitsIntoSingleBand(QA, 0, 1, 'baseQA'))
-        LSTQuality    = ee.Image(getQABitsIntoSingleBand(QA, 6, 7, 'LST_error'))
-        baseMask      = baseQuality.neq(2).And(baseQuality.neq(3))
-        LSTmask       = LSTQuality.lt(3)
-        return i.select('LST_1km').updateMask(baseMask).updateMask(LSTmask)
+        QA          = i.select('QC');
+        baseQuality = ee.Image(getQABitsIntoSingleBand(QA, 0, 1, 'baseQA'));
+        LSTQuality  = ee.Image(getQABitsIntoSingleBand(QA, 6, 7, 'LST_error'));
+        baseMask    = baseQuality.neq(2).And(baseQuality.neq(3));
+        LSTmask     = LSTQuality.lt(3);
+        return i.select('LST_1km').updateMask(baseMask).updateMask(LSTmask);
 
     def _yearsToImages(i):
         # make a number into an integer and set it as a property
@@ -123,25 +139,8 @@ def batchExportByYear(
         return ee.Image(image).updateMask(mask).copyProperties(image)
 
     def _seasonLST(yearImage,ithCollection):
-
-        # get the year property
-        year = yearImage.get('year')
-
-        startDate = ee.Date.fromYMD(year, 1, 1);
-        endDate   = ee.Date.fromYMD(year,12,31).advance(1,'day');
-
-        if dayOrNight == 'day':
-            modisDayOrNight = MODIS_LST_day
-        elif dayOrNight == 'night':
-            modisDayOrNight = MODIS_LST_night
-
-        filtered = (ee.ImageCollection(modisDayOrNight)
-            .filter(ee.Filter.date(startDate,endDate))
-            .map(_reprojectImage) # equal area projection
-            .map(_mappableQAfilter) # QA masking
-            .map(_setDateDetails)) # apply dates
-
-        return ee.ImageCollection(ithCollection).merge(ee.ImageCollection(filtered))
+        filtered = modis.map(_reprojectImage).map(_mappableQAfilter).map(_setDateDetails);
+        return ee.ImageCollection(ithCollection).merge(ee.ImageCollection(filtered));
 
     def _processEveryLocationReturnFeatCol(aPlace,ithListItem):
         # one feature at a time
@@ -173,20 +172,20 @@ def batchExportByYear(
             nominalScale = ee.Image(image).projection().nominalScale()
 
             trueCase = (ee.Image(image).reduceRegion(**{
-                'reducer': ee.Reducer.mean().unweighted(), # spatial mean
+                'reducer': ee.Reducer.mean(), # ee.Reducer.mean().unweighted(),
                 'geometry': ee.Feature(aPlace).geometry(),
                 'crs': proj,
                 'scale': nominalScale
                 }).get(band0Name))
             falseCase = (ee.Image(0).reduceRegion(**{
-                'reducer': ee.Reducer.mean().unweighted(), # spatial mean
+                'reducer': ee.Reducer.mean(), # ee.Reducer.mean().unweighted(),
                 'geometry': ee.Feature(aPlace).geometry(),
                 'crs': proj,
                 'scale': nominalScale
                 }).rename(['constant'], [band0Name]).get(band0Name))
             # if we have more that our minimum threshold visible, accept the temp mean
             # otherwise, we take no value for the date
-            meanValue = ee.Algorithms.If(fracVisible.gte(visibilityGTE), trueCase, falseCase)
+            meanValue = ee.Algorithms.If(fracVisible.gte(visibilityGTE), trueCase, falseCase);
 
             # iteratively build up a LIST which is cheaper than a feat. coll.
             # or img. coll. with these values attached I suspect.

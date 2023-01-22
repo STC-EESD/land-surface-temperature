@@ -43,7 +43,7 @@ test.googledrive <- function(
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     DF.earth.engine <- as.data.frame(googledrive::drive_ls(
         path    = googledrive::as_id(google.drive.ID),
-        pattern = "\\.tif"
+        pattern = "LST_.+\\.csv"
         ));
 
     saveRDS(
@@ -59,6 +59,13 @@ test.googledrive <- function(
         cat("\ndownloading:",temp.id,"\n");
         googledrive::drive_download(file = googledrive::as_id(temp.id));
         }
+
+    ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+    # googledrive::drive_trash(file = googledrive::as_id(DF.earth.engine[,'id']));
+    # for ( temp.id in DF.earth.engine[,'id'] ) {
+    #     cat("\ndownloading:",temp.id,"\n");
+    #     googledrive::drive_trash(file = googledrive::as_id(temp.id));
+    #     }
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     cat(paste0("\n",thisFunctionName,"() quits."));

@@ -55,17 +55,30 @@ test.googledrive <- function(
     print( DF.earth.engine   );
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-    for ( temp.id in DF.earth.engine[,'id'] ) {
-        cat("\ndownloading:",temp.id,"\n");
-        googledrive::drive_download(file = googledrive::as_id(temp.id));
-        }
-
-    ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-    # googledrive::drive_trash(file = googledrive::as_id(DF.earth.engine[,'id']));
     # for ( temp.id in DF.earth.engine[,'id'] ) {
     #     cat("\ndownloading:",temp.id,"\n");
-    #     googledrive::drive_trash(file = googledrive::as_id(temp.id));
+    #     googledrive::drive_download(file = googledrive::as_id(temp.id));
     #     }
+    for ( row.index in seq(1,nrow(DF.earth.engine)) ) {
+        temp.name <- DF.earth.engine[row.index,'name'];
+        temp.id   <- DF.earth.engine[row.index,'id'  ];
+        cat("\ndownloading:",temp.name,"(",temp.id,")");
+        googledrive::drive_download(file = googledrive::as_id(temp.id));
+        }
+    cat("\n");
+
+    ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+    # googledrive::drive_trash(
+    #     file = googledrive::as_id(as.character(DF.earth.engine[,'id']))
+    #     );
+    # for ( temp.id in DF.earth.engine[,'id'] ) {
+    for ( row.index in seq(1,nrow(DF.earth.engine)) ) {
+        temp.name <- DF.earth.engine[row.index,'name'];
+        temp.id   <- DF.earth.engine[row.index,'id'  ];
+        cat("\nmoving to trash:",temp.name,"(",temp.id,")");
+        googledrive::drive_trash(file = googledrive::as_id(temp.id));
+        }
+    cat("\n");
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     cat(paste0("\n",thisFunctionName,"() quits."));

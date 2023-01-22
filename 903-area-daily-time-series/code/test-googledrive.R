@@ -59,13 +59,13 @@ test.googledrive <- function(
     #     cat("\ndownloading:",temp.id,"\n");
     #     googledrive::drive_download(file = googledrive::as_id(temp.id));
     #     }
-    for ( row.index in seq(1,nrow(DF.earth.engine)) ) {
-        temp.name <- DF.earth.engine[row.index,'name'];
-        temp.id   <- DF.earth.engine[row.index,'id'  ];
-        cat("\ndownloading:",temp.name,"(",temp.id,")");
-        googledrive::drive_download(file = googledrive::as_id(temp.id));
-        }
-    cat("\n");
+    # for ( row.index in seq(1,nrow(DF.earth.engine)) ) {
+    #     temp.name <- DF.earth.engine[row.index,'name'];
+    #     temp.id   <- DF.earth.engine[row.index,'id'  ];
+    #     cat("\ndownloading:",temp.name,"(",temp.id,")");
+    #     googledrive::drive_download(file = googledrive::as_id(temp.id));
+    #     }
+    # cat("\n");
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     # googledrive::drive_trash(

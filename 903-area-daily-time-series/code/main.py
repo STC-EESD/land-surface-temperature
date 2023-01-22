@@ -66,18 +66,19 @@ myYearRange = imageCollectionGetYearRange(
     );
 print("\nmyYearRange:",myYearRange);
 
-for batchID in batchIDs[:3]:
-    for year in myYearRange[:3]:
-        batchExportByYear(
-            batchSize             = batchSize,
-            batchID               = batchID,
-            year                  = year,
-            visibilityGTE         = 0.5,
-            dayOrNight            = 'day',
-            featureCollectionName = popCentreGeometries,
-            imageCollectionName   = modis_061_11A1,
-            google_drive_folder   = google_drive_folder
-            );
+for dayOrNight in ['day','night']:
+    for batchID in batchIDs[:3]:
+        for year in myYearRange[:3]:
+            batchExportByYear(
+                batchSize             = batchSize,
+                batchID               = batchID,
+                year                  = year,
+                dayOrNight            = dayOrNight,
+                visibilityGTE         = 0.5,
+                featureCollectionName = popCentreGeometries,
+                imageCollectionName   = modis_061_11A1,
+                google_drive_folder   = google_drive_folder
+                );
 
 ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
 

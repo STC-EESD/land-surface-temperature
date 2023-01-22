@@ -12,8 +12,8 @@ def batchExportByYear(
     featureCollectionName,
     imageCollectionName,
     google_drive_folder,
-    visibilityGTE = 0.5,
-    dayOrNight    = 'day'
+    dayOrNight    = 'day',
+    visibilityGTE = 0.5
     ):
 
     thisFunctionName = "batchExportByYear";
@@ -225,8 +225,7 @@ def batchExportByYear(
     # print('FinalProduct', FinalProduct)
 
     # dynamically construct the file name and export task
-    # visibilityGTE = round(visibilityGTE*10);
-    exportString = 'LST_' + '{:04d}'.format(batchID) +'_'+ str(year) +'_'+ dayOrNight + '_visGTE_' + str(visibilityGTE).replace('.','pt');
+    exportString = 'LST_' + dayOrNight +'_'+ '{:04d}'.format(batchID) +'_'+ str(year) + '_visGTE_' + str(visibilityGTE).replace('.','pt');
 
     temp_task = ee.batch.Export.table.toDrive(
         collection     = FinalProduct, # FinalProduct.getInfo(),

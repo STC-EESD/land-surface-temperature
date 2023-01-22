@@ -177,7 +177,7 @@ def batchExportByYear(
                 'crs': proj,
                 'scale': nominalScale
                 }).get(band0Name))
-            falseCase = (ee.Image(0).reduceRegion(**{
+            falseCase = (ee.Image(-999).reduceRegion(**{
                 'reducer': ee.Reducer.mean(), # ee.Reducer.mean().unweighted(),
                 'geometry': ee.Feature(aPlace).geometry(),
                 'crs': proj,

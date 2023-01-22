@@ -17,7 +17,7 @@ def batchExportByYear(
     ):
 
     thisFunctionName = "batchExportByYear";
-    print( "\n### " + thisFunctionName + " starts (" + dayOrNight + ", batchID:" + str(batchID) + ", year:" + str(year) + ", visibilityGTE:" + str(visibilityGTE) + ") ...\n" );
+    print( "\n### " + thisFunctionName + " starts (" + dayOrNight + ", batchID:" + str(batchID) + ", year:" + str(year) + ", visibilityGTE:" + str(visibilityGTE) + ") ..." );
 
     # ####################################
     # ####################################
@@ -237,5 +237,5 @@ def batchExportByYear(
     temp_task.start();
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
-    print( "\n### " + thisFunctionName + " exits (batchID:" + str(batchID) + ", year:" + str(year) + ") ...\n" );
+    print( "### " + thisFunctionName + " exits (batchID:" + str(batchID) + ", year:" + str(year) + ") ...\n" );
     return( None );

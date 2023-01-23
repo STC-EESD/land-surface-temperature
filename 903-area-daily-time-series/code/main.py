@@ -67,8 +67,8 @@ myYearRange = imageCollectionGetYearRange(
 print("\nmyYearRange:",myYearRange);
 
 for dayOrNight in ['day','night']:
-    for batchID in batchIDs[:3]:
-        for year in myYearRange[:3]:
+    for batchID in batchIDs:
+        for year in myYearRange:
             batchExportByYear(
                 batchSize             = batchSize,
                 batchID               = batchID,

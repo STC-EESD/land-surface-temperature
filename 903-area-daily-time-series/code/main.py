@@ -50,7 +50,7 @@ test_eeAuthenticate();
 
 popCentreGeometries = 'projects/eperez-cloud/assets/gpc_000b21a_e_4326';
 modis_061_11A1      = 'MODIS/061/MOD11A1';
-batchSize           = 100;
+batchSize           = 200;
 
 batchIDs = featureCollectionGetBatches(
     featureCollectionName = popCentreGeometries,

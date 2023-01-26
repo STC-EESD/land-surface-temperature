@@ -43,7 +43,7 @@ test.googledrive <- function(
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     DF.earth.engine <- as.data.frame(googledrive::drive_ls(
         path    = googledrive::as_id(google.drive.ID),
-        pattern = "LST_.+\\.csv"
+        pattern = "(DF-popCenter-batch|LST_.+)\\.csv"
         ));
 
     saveRDS(

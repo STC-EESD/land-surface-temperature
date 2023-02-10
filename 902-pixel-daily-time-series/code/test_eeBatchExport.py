@@ -1,10 +1,19 @@
 
 import ee
 
-def test_eeBatchExport(google_drive_folder):
+def test_eeBatchExport(
+    google_drive_folder,
+    clip_feature_collection_name,
+    image_collection_name,
+    year,
+    ):
     """
-    Purpose: Download all images in the MODIS daily 1km LST poduct from an Earth Engine image collection into the users' Google Drive folder
-    Input: The name of the desired output folder in the users Google Drive
+    Purpose: Download the specified year's worth of images from the MODIS daily 1km LST poduct from an Earth Engine image collection into the users' Google Drive folder
+    Input: 
+        - The name of the desired output folder in the user's Google Drive
+        - The name of the GEE feature collection used to subset LST data
+        - GEE image collection name to use
+        - Year of data to download
     Output: A series of .TIF images in the specified Google Drive folder
 
     """
@@ -14,13 +23,15 @@ def test_eeBatchExport(google_drive_folder):
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     
     # Get the MODIS LST 1km Daily dataset (From Terra satellite)
-    t_modis = ee.ImageCollection("MODIS/061/MOD11A1") \
-                .filterDate(ee.Date("2022-07-19"),ee.Date("2022-07-26"))
+    start_date = ee.Date.fromYMD(year, 1, 1) # year month day
+    end_date   = ee.Date.fromYMD(year,12,31).advance(1,'day')
+    
+    t_modis = ee.ImageCollection(image_collection_name).filterDate(start_date,end_date)
     
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     # Get the population centre subset layer from a user's assets
-    popctr_subset = ee.FeatureCollection("projects/patrickgosztonyi-lst/assets/subset_gpc_000b21a_e_WGS84")
-    popctr = ee.FeatureCollection("projects/patrickgosztonyi-lst/assets/gpc_000b21a_e_WGS84")
+    popctr_subset = ee.FeatureCollection(clip_feature_collection_name)
+    #popctr = ee.FeatureCollection("projects/patrickgosztonyi-lst/assets/gpc_000b21a_e_WGS84")
     
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
 
@@ -56,7 +67,7 @@ def test_eeBatchExport(google_drive_folder):
 
     # need to clip the LST product to the population centre subset boundaries
     # do this by creating a function to clip and image, and then mapping it over the collection
-    def clip_image_collection(image_collection,feature_collection):
+    def _clip_image_collection(image_collection,feature_collection):
         '''
         Purpose: create a function to clip images from a given feature collection that can be mapped 
             to an image collection
@@ -73,10 +84,10 @@ def test_eeBatchExport(google_drive_folder):
     #end function
 
     # apply the clipping function
-    t_modis_16bit_clip = clip_image_collection(t_modis_16bit,popctr_subset)
+    t_modis_16bit_clip = _clip_image_collection(t_modis_16bit, popctr_subset)
 
     # get the IDs of each image in the collection, to use as index in the loop for exporting them
-    image_ids = t_modis_16bit_clip.aggregate_array('system:index').getInfo()
+    image_ids = (t_modis_16bit_clip.aggregate_array('system:index')).getInfo()
 
     # iterate through all the images in the collection, then create and run export tasks
     for i, image_id in enumerate(image_ids):

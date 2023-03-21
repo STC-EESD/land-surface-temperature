@@ -19,9 +19,12 @@ source ${HOME}/.gee_environment_variables
 if [[ "${OSTYPE}" =~ .*"linux".* ]]; then
   # cp ${HOME}/.gee_environment_variables ${outputDIR}/code/gee_environment_variables.txt
   pythonBinDIR=${GEE_ENV_DIR}/bin
+  RBinDIR=${pythonBinDIR}
 else
   pythonBinDIR=`which python`
   pythonBinDIR=${pythonBinDIR//\/python/}
+  RBinDIR=`which R`
+  RBinDIR=${RBinDIR//\/python/}
 fi
 
 ########################################################
@@ -40,7 +43,7 @@ sleep 600
 myRscript=${codeDIR}/main.R
 stdoutFile=${outputDIR}/stdout.R.`basename ${myRscript} .R`
 stderrFile=${outputDIR}/stderr.R.`basename ${myRscript} .R`
-R --no-save --args ${dataDIR} ${codeDIR} ${outputDIR} ${googleDriveFolder} < ${myRscript} > ${stdoutFile} 2> ${stderrFile}
+${RBinDIR}/R --no-save --args ${dataDIR} ${codeDIR} ${outputDIR} ${googleDriveFolder} < ${myRscript} > ${stdoutFile} 2> ${stderrFile}
 
 ##################################################
 exit

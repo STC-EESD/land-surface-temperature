@@ -9,10 +9,17 @@ test.googledrive <- function(
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     options(
-        gargle_oauth_email = Sys.getenv("GARGLE_OAUTH_EMAIL")
-        # ,gargle_oauth_cache = Sys.getenv("GARGLE_OAUTH_CACHE")
+        gargle_oauth_email = Sys.getenv("GARGLE_OAUTH_EMAIL"),
+        gargle_oauth_cache = Sys.getenv("GARGLE_OAUTH_CACHE")
         );
 
+    cat("\ngetOption('gargle_oauth_email')\n");
+    print( getOption('gargle_oauth_email')   );
+
+    cat("\ngetOption('gargle_oauth_cache')\n");
+    print( getOption('gargle_oauth_cache')   );
+
+    ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
     require(googledrive);
 
     ### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###

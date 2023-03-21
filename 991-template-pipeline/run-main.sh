@@ -24,7 +24,7 @@ else
   pythonBinDIR=`which python`
   pythonBinDIR=${pythonBinDIR//\/python/}
   RBinDIR=`which R`
-  RBinDIR=${RBinDIR//\/python/}
+  RBinDIR=${RBinDIR//\/R/}
 fi
 
 ########################################################
